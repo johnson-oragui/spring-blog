@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+allprojects {
+    group = 'com.johnson' // Common group for all modules
+    version = '0.0.1-SNAPSHOT' // Common version for all modules
+
+    repositories {
+        mavenCentral()
+    }
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+    }
+}
+
+
+// Configure subprojects (optional, can also be done in individual build files)
+subprojects {
+    apply plugin: 'java' // Apply Java plugin to all subprojects
+
+    // If you applied io.spring.dependency-management in allprojects,
+    // you might not need this here, but it's harmless.
+    apply plugin: 'io.spring.dependency-management'
+}
