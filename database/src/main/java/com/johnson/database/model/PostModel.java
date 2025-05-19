@@ -30,7 +30,7 @@ public class PostModel extends BaseModel {
   @Column(name = "genre", nullable = false)
   private String genre;
 
-  @ManyToMany(targetEntity = UserModel.class, cascade = CascadeType.ALL, mappedBy = "id")
+  @ManyToOne(targetEntity = UserModel.class, cascade = CascadeType.ALL)
   @JoinColumn(name = "user_id", nullable = false)
   private UserModel blogger;
 }
