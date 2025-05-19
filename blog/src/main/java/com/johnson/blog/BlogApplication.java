@@ -2,18 +2,18 @@ package com.johnson.blog;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
+// @SpringBootApplication(scanBasePackages = { "blog", "database", "utilities" })
 @SpringBootApplication
+@ComponentScan(basePackages = "com.johnson")
+@EnableJpaRepositories(basePackages = "com.johnson.database.repository")
+@EntityScan(basePackages = "com.johnson.database.model")
 public class BlogApplication {
-
-	@RequestMapping("/")
-	String home() {
-		return "Blog App";
-	}
 
 	public static void main(String[] args) {
 		SpringApplication.run(BlogApplication.class, args);
 	}
-
 }
