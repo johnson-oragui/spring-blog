@@ -1,4 +1,4 @@
-package com.johnson.utilities;
+package com.johnson.utilities.config;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
@@ -12,4 +12,7 @@ public class ConfigUtils {
 	public static final String CLOUDINARY_CLOUD_NAME = dotenv.get("CLOUDINARY_CLOUD_NAME");
 	public static final String CLOUDINARY_API_KEY = dotenv.get("CLOUDINARY_API_KEY");
 	public static final String CLOUDINARY_API_SECRET = dotenv.get("CLOUDINARY_API_SECRET");
+
+	public static final String JWT_SECRET = dotenv.get("JWT_SECRET");
+	public static final long JWT_EXPIRATION = Long.parseLong(dotenv.get("JWT_EXPIRATION", "86400000"));
 }
