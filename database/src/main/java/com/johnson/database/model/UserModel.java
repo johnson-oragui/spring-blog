@@ -10,7 +10,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "blog_users")
+@Table(name = "blog_users", uniqueConstraints = {
+    @UniqueConstraint(columnNames = { "email" }, name = "uq_blog_users_email") })
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,9 +24,12 @@ public class UserModel extends BaseModel {
   @Column(name = "password", nullable = false)
   private String password;
 
-  @Column(name = "email", nullable = false, length = 100, unique = false)
+  @Column(name = "email", nullable = false, length = 100, unique = true)
   private String email;
 
   @OneToMany(mappedBy = "blogger", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<PostModel> posts = new ArrayList<>();
+
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<UserSessionModel> sessions = new ArrayList<>();
 }
