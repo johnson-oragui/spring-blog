@@ -22,6 +22,7 @@ import com.johnson.utilities.UUIDGenerator;
 public abstract class BaseModel {
 
   @Id
+  @Column(unique = true, nullable = false)
   private String id = UUIDGenerator.generateUUIDv7();
 
   @CreationTimestamp(source = SourceType.DB)
