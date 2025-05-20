@@ -15,9 +15,10 @@ import io.jsonwebtoken.security.Keys;
 public class JwtUtil {
   private static final Key KEY = Keys.hmacShaKeyFor(ConfigUtils.JWT_SECRET.getBytes());
 
-  public static String generateAccessToken(String userId, String email) {
-    return Jwts.builder().setSubject(userId).claim("email", email).setIssuedAt(new Date())
-        .setExpiration(new Date(System.currentTimeMillis() + ConfigUtils.JWT_EXPIRATION))
+  public static String generateAccessToken(String userId, String email, String jti, String deviceId) {
+    return Jwts.builder().setSubject(userId).claim("email", email).claim("jti", jti).claim("deviceId", deviceId)
+        .setIssuedAt(new Date())
+        .setExpiration(new Date(System.currentTimeMillis() + ConfigUtils.JWT_EXPIRATION * 1000L))
         .signWith(KEY, SignatureAlgorithm.HS256).compact();
   }
 
