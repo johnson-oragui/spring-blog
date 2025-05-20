@@ -13,6 +13,9 @@ public class UserLoginDto {
   @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,}$", message = "Password must contain at least one digit, one lowercase, one uppercase letter, and be at least 8 characters long")
   private String password;
 
+  @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[-]).{10,60}$")
+  private String deviceId;
+
   public String getEmail() {
     return email;
   }
@@ -27,5 +30,13 @@ public class UserLoginDto {
 
   public String getPassword() {
     return password;
+  }
+
+  public void setDeviceId(String deviceId) {
+    this.deviceId = deviceId;
+  }
+
+  public String getDeviceId() {
+    return deviceId;
   }
 }
