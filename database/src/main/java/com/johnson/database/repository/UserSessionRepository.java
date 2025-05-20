@@ -7,18 +7,18 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.johnson.database.model.UserSession;
+import com.johnson.database.model.UserSessionModel;
 
-public interface UserSessionRepository extends JpaRepository<UserSession, String> {
-  @Query(value = "SELECT * FROM UserSession WHERE jti = :jti AND user_id = :userId AND device_id = :deviceId", nativeQuery = true)
-  Optional<UserSession> findUserSession(@Param("jti") String jti, @Param("userId") String userId,
+public interface UserSessionRepository extends JpaRepository<UserSessionModel, String> {
+  @Query(value = "SELECT * FROM UserSessionModel u WHERE u.jti = :jti AND u.userId = :userId AND u.deviceId = :deviceId", nativeQuery = true)
+  Optional<UserSessionModel> findUserSession(@Param("jti") String jti, @Param("userId") String userId,
       @Param("deviceId") String deviceId);
 
   @Modifying
-  @Query("UPDATE UserSession SET jti = :jti WHERE user_id = :userId AND device_id = deviceId")
+  @Query("UPDATE UserSessionModel u SET u.jti = :jti WHERE u.userId = :userId AND u.deviceId = deviceId")
   int updateJti(@Param("jti") String jti, @Param("userId") String userId, @Param("deviceId") String deviceId);
 
   @Modifying
-  @Query("UPDATE UserSession SET is_logged_out = TRUE WHERE user_id = :userId AND device_id = :deviceId")
+  @Query("UPDATE UserSessionModel u SET u.isLoggedOut = TRUE WHERE u.userId = :userId AND u.deviceId = :deviceId")
   int updateIsLoggedOut(@Param("userid") String userId, @Param("device_id") String deviceId);
 }
