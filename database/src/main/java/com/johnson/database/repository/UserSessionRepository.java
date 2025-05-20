@@ -14,9 +14,17 @@ public interface UserSessionRepository extends JpaRepository<UserSessionModel, S
   Optional<UserSessionModel> findUserSession(@Param("jti") String jti, @Param("userId") String userId,
       @Param("deviceId") String deviceId);
 
+  @Query(value = "SELECT * FROM UserSessionModel u WHERE u.deviceId = :deviceId", nativeQuery = true)
+  Optional<UserSessionModel> findUserSessionByDeviceId(@Param("deviceId") String deviceId);
+
   @Modifying
   @Query("UPDATE UserSessionModel u SET u.jti = :jti WHERE u.userId = :userId AND u.deviceId = deviceId")
   int updateJti(@Param("jti") String jti, @Param("userId") String userId, @Param("deviceId") String deviceId);
+
+  @Modifying
+  @Query("UPDATE UserSessionModel u SET u.jti = :jti, u.isLoggedOut = :isLoggedOut WHERE u.userId = :userId AND u.deviceId = deviceId")
+  int updateJtiAndIsLoggedOut(@Param("jti") String jti, @Param("userId") String userId,
+      @Param("deviceId") String deviceId, @Param("isLoggedOut") boolean isLoggedOut);
 
   @Modifying
   @Query("UPDATE UserSessionModel u SET u.isLoggedOut = TRUE WHERE u.userId = :userId AND u.deviceId = :deviceId")
