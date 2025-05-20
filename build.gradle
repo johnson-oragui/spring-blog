@@ -14,8 +14,8 @@ allprojects {
     repositories {
         mavenCentral()
     }
-
     
+
 }
 
 subprojects {
@@ -63,6 +63,9 @@ project(':blog') {
         
         implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
         implementation 'org.hibernate.validator:hibernate-validator:8.0.1.Final'
+        
+        // --- Add Springdoc OpenAPI (Swagger) dependency ---
+        implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0' 
     }
         
     // Spring Boot specific tasks
