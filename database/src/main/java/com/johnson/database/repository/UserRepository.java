@@ -23,9 +23,6 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
   @Query("UPDATE UserModel SET email = :email WHERE id = :id")
   int updateUser(@Param("id") Id id, @Param("email") String email);
 
-  @Query(value = "SELECT * FROM UserModel WHERE created_at > :date", nativeQuery = true)
-  List<UserModel> findUsersCreatedAfter(@Param("date") LocalDateTime date);
-
   @Query(value = "SELECT COUNT(*) FROM UserModel;", nativeQuery = true)
   long countUsers();
 
