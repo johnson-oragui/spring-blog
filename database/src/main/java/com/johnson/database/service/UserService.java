@@ -16,7 +16,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.johnson.database.model.UserModel;
+import com.johnson.database.model.UserSessionModel;
 import com.johnson.database.repository.UserRepository;
+import com.johnson.database.repository.UserSessionRepository;
+import com.johnson.utilities.UUIDGenerator;
+import com.johnson.utilities.config.ConfigUtils;
 import com.johnson.utilities.dtos.BaseApiResponse;
 import com.johnson.utilities.dtos.PaginationMeta;
 import com.johnson.utilities.dtos.authDtos.UserLoginResponseDto;
@@ -24,8 +28,10 @@ import com.johnson.utilities.dtos.authDtos.UserDataResponseDto;
 import com.johnson.utilities.dtos.authDtos.UserLoginDto;
 import com.johnson.utilities.dtos.authDtos.UserRegistrationDto;
 import com.johnson.utilities.exceptions.ConflictException;
+import com.johnson.utilities.exceptions.InternalServerException;
 import com.johnson.utilities.exceptions.UnauthorizedException;
 import com.johnson.utilities.exceptions.ValidationException;
+import com.johnson.utilities.exceptions.BadRequestException;
 import com.johnson.utilities.security.JwtUtil;
 import com.johnson.utilities.security.PasswordUtil;
 
@@ -36,6 +42,8 @@ import com.johnson.utilities.security.PasswordUtil;
 public class UserService {
   @Autowired
   private UserRepository userRepository;
+  @Autowired
+  private UserSessionRepository userSessionRepository;
 
   @Transactional(readOnly = true)
   public Optional<UserModel> getUserByEmail(String email) {
@@ -80,11 +88,37 @@ public class UserService {
     if (!isValidPassword) {
       throw new UnauthorizedException("Invalid Credentials");
     }
+    String jti = UUIDGenerator.generateUUIDv7();
+    String deviceId = userLoginDto.getDeviceId();
 
-    String token = JwtUtil.generateAccessToken(user.getId(), user.getEmail());
+    String token = JwtUtil.generateAccessToken(user.getId(), user.getEmail(), jti, deviceId);
+    // add user sessions here
+    Optional<UserSessionModel> deviceIdExists = userSessionRepository
+        .findUserSessionByDeviceId(deviceId);
+    if (deviceIdExists.isPresent()) {
+      if (!user.getId().equals(deviceIdExists.get().getUser().getId())) {
+        throw new BadRequestException("device id must be unique");
+      }
+
+      // logging in deviceid is same with existing device
+      // update the jti with the newly generated jti and update is_logged_out to false
+      int updated = userSessionRepository.updateJtiAndIsLoggedOut(jti, user.getId(), userLoginDto.getDeviceId(), false);
+      if (updated < 1) {
+        throw new InternalServerException("Something went wrong");
+      }
+
+    }
+    if (!deviceIdExists.isPresent()) {
+      UserSessionModel userSessionModel = new UserSessionModel();
+      userSessionModel.setJti(jti);
+      userSessionModel.setDeviceId(deviceId);
+      userSessionModel.setUser(user);
+      userSessionRepository.save(userSessionModel);
+    }
+
     Map<String, Object> accessToken = new HashMap<>();
     accessToken.put("token", token);
-    accessToken.put("expireAt", 888888);
+    accessToken.put("expireAt", ConfigUtils.JWT_EXPIRATION * 1000);
     UserDataResponseDto userDataResponseDto = new UserDataResponseDto(
         user.getId(),
         user.getFirstname(),
