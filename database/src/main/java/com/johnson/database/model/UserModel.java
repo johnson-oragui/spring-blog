@@ -11,7 +11,8 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "blog_users", uniqueConstraints = {
-    @UniqueConstraint(columnNames = { "email" }, name = "uq_blog_users_email") })
+    @UniqueConstraint(columnNames = { "email" }, name = "uq_blog_users_email"),
+    @UniqueConstraint(columnNames = { "id" }, name = "uq_blog_users_id") })
 @Getter
 @Setter
 @NoArgsConstructor
