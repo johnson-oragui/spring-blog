@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +38,8 @@ import com.johnson.utilities.exceptions.BadRequestException;
 import com.johnson.utilities.security.JwtUtil;
 import com.johnson.utilities.security.PasswordUtil;
 
+import io.jsonwebtoken.JwtException;
+
 // import jakarta.xml.bind.ValidationException;
 
 @Service
@@ -44,6 +49,8 @@ public class UserService {
   private UserRepository userRepository;
   @Autowired
   private UserSessionRepository userSessionRepository;
+  @Autowired
+  private JwtUtil jwtUtil;
 
   @Transactional(readOnly = true)
   public Optional<UserModel> getUserByEmail(String email) {
@@ -77,7 +84,8 @@ public class UserService {
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 
-  public ResponseEntity<BaseApiResponse<UserLoginResponseDto>> authenticate(UserLoginDto userLoginDto) {
+  public ResponseEntity<BaseApiResponse<UserLoginResponseDto>> authenticate(UserLoginDto userLoginDto,
+      HttpServletResponse response) {
     Optional<UserModel> userExists = userRepository.findByEmail(userLoginDto.getEmail());
     if (!userExists.isPresent()) {
       throw new UnauthorizedException("Invalid Credentials");
@@ -91,7 +99,8 @@ public class UserService {
     String jti = UUIDGenerator.generateUUIDv7();
     String deviceId = userLoginDto.getDeviceId();
 
-    String token = JwtUtil.generateAccessToken(user.getId(), user.getEmail(), jti, deviceId);
+    String token = jwtUtil.generateToken(user.getId(), user.getEmail(), jti, deviceId, "access");
+    String refreshToken = jwtUtil.generateToken(user.getId(), user.getEmail(), jti, deviceId, "refresh");
     // add user sessions here
     Optional<UserSessionModel> deviceIdExists = userSessionRepository
         .findUserSessionByDeviceId(deviceId);
@@ -129,9 +138,67 @@ public class UserService {
         accessToken,
         userDataResponseDto);
 
-    BaseApiResponse<UserLoginResponseDto> response = BaseApiResponse.success("Login success", userLoginResponseDto);
+    response.setHeader("X-Refresh-Token", refreshToken);
 
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    BaseApiResponse<UserLoginResponseDto> baseApiResponse = BaseApiResponse.success("Login success",
+        userLoginResponseDto);
+    return new ResponseEntity<>(baseApiResponse, HttpStatus.OK);
+  }
+
+  public ResponseEntity<BaseApiResponse<Map<String, Object>>> refreshToken(HttpServletRequest request,
+      HttpServletResponse response) {
+    String headerRefreshToken = request.getHeader("X-Refresh-Token");
+    if (headerRefreshToken == null) {
+      throw new UnauthorizedException("Refresh token missing");
+    }
+
+    try {
+      String userId = jwtUtil.extractUserId(headerRefreshToken);
+      String email = jwtUtil.extractClaim(headerRefreshToken, "email");
+      String tokenType = jwtUtil.extractClaim(headerRefreshToken, "tokenType");
+      String deviceId = jwtUtil.extractClaim(headerRefreshToken, "deviceId");
+      String jti = jwtUtil.extractClaim(headerRefreshToken, "jti");
+
+      if (!tokenType.equals("refresh")) {
+        throw new UnauthorizedException("Only Refresh Token allowed");
+      }
+
+      Optional<UserSessionModel> userSessionExists = userSessionRepository.findUserSession(jti, userId, deviceId);
+
+      if (!userSessionExists.isPresent()) {
+        throw new UnauthorizedException("Invalid session");
+      }
+      if (userSessionExists.get().isLoggedOut()) {
+        throw new UnauthorizedException("Session has expired");
+      }
+      if (!userSessionExists.get().getJti().equals(jti)) {
+        throw new UnauthorizedException("Invalid Refresh Token");
+      }
+
+      String newJti = UUIDGenerator.generateUUIDv7();
+
+      long isUpdated = userSessionRepository.updateJti(newJti, userId, deviceId);
+      if (isUpdated < 1) {
+        throw new InternalServerException("An unexpected error occurred. Could not refresh token.");
+      }
+      String token = jwtUtil.generateToken(userId, email, newJti, deviceId, "access");
+      String newRefreshToken = jwtUtil.generateToken(userId, email, newJti, deviceId, "refresh");
+
+      response.setHeader("X-Refresh-Token", newRefreshToken);
+
+      Map<String, Object> newTokenMap = new HashMap<>();
+      newTokenMap.put("accessToken", token);
+      newTokenMap.put("expiresAt", Long.parseLong(ConfigUtils.JWT_EXPIRATION) * 1000L);
+      BaseApiResponse<Map<String, Object>> baseApiResponse = BaseApiResponse.success("Tokens refreshed successfully",
+          newTokenMap);
+
+      ResponseEntity<BaseApiResponse<Map<String, Object>>> responseEntity = new ResponseEntity<>(baseApiResponse,
+          HttpStatus.OK);
+
+      return responseEntity;
+    } catch (JwtException e) {
+      throw new UnauthorizedException(e.getMessage());
+    }
   }
 
   // @Transactional(rollbackFor = { ValidationException.class,
