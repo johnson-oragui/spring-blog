@@ -13,24 +13,36 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
 public class JwtUtil {
-  private static final Key KEY = Keys.hmacShaKeyFor(ConfigUtils.JWT_SECRET.getBytes());
+  private final Key KEY = Keys.hmacShaKeyFor(ConfigUtils.JWT_SECRET.getBytes());
 
-  public static String generateAccessToken(String userId, String email, String jti, String deviceId) {
-    return Jwts.builder().setSubject(userId).claim("email", email).claim("jti", jti).claim("deviceId", deviceId)
+  public String generateToken(String userId, String email, String jti, String deviceId, String tokenType) {
+    Long expiresIn;
+    if (tokenType.equals("access")) {
+      expiresIn = Long.parseLong(ConfigUtils.JWT_EXPIRATION);
+    } else {
+      expiresIn = Long.parseLong(ConfigUtils.JWT_REFRESH_EXPIRATION);
+    }
+
+    return Jwts.builder()
+        .setSubject(userId)
+        .claim("email", email)
+        .claim("jti", jti)
+        .claim("deviceId", deviceId)
+        .claim("tokenType", tokenType)
         .setIssuedAt(new Date())
-        .setExpiration(new Date(System.currentTimeMillis() + Long.parseLong(ConfigUtils.JWT_EXPIRATION) * 1000L))
+        .setExpiration(new Date(System.currentTimeMillis() + expiresIn * 1000L))
         .signWith(KEY, SignatureAlgorithm.HS256).compact();
   }
 
-  public static Jws<Claims> validateToken(String token) throws JwtException {
+  public Jws<Claims> validateToken(String token) throws JwtException {
     return Jwts.parserBuilder().setSigningKey(KEY).build().parseClaimsJws(token);
   }
 
-  public static String extractUserId(String token) {
+  public String extractUserId(String token) {
     return validateToken(token).getBody().getSubject();
   }
 
-  public static String extractEmail(String token) {
-    return validateToken(token).getBody().get("email", String.class);
+  public String extractClaim(String token, String claimName) {
+    return validateToken(token).getBody().get(claimName, String.class);
   }
 }
