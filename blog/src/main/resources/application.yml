@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: blog
+
+  profiles:
+    active: dev
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    url: ${DB_URL}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: MyHikariCP
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+      max-lifetime: 600000
+      connection-timeout: 30000
+      auto-commit: true
+      connection-init-sql: SELECT 1
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        '[format_sql]': true
+        '[jdbc.time_zone]': UTC
+        # dialect: org.hibernate.dialect.PostgreSQLDialect
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+server:
+  port: 7005
+logging:
+  level:
+    root: INFO
+    '[org.springframework]': INFO
+    '[com.johnson]': DEBUG
+    # '[com.zaxxer.hikari]': DEBUG
