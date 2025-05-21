@@ -118,7 +118,7 @@ public class UserService {
 
     Map<String, Object> accessToken = new HashMap<>();
     accessToken.put("token", token);
-    accessToken.put("expireAt", ConfigUtils.JWT_EXPIRATION * 1000);
+    accessToken.put("expireAt", Long.parseLong(ConfigUtils.JWT_EXPIRATION) * 1000);
     UserDataResponseDto userDataResponseDto = new UserDataResponseDto(
         user.getId(),
         user.getFirstname(),
