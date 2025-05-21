@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.SourceType;
@@ -26,24 +26,19 @@ public abstract class BaseModel {
   private String id = UUIDGenerator.generateUUIDv7();
 
   @CreationTimestamp(source = SourceType.DB)
-  @Column(updatable = false, name = "created_at", nullable = false)
-  private LocalDateTime createdAt;
+  @Column(updatable = false, name = "created_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
+  private OffsetDateTime createdAt;
 
-  @UpdateTimestamp
-  @Column(name = "updated_at", nullable = false)
-  private LocalDateTime updatedAt;
+  @UpdateTimestamp(source = SourceType.VM)
+  @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
+  private OffsetDateTime updatedAt;
 
   @PrePersist
   protected void onCreate() {
     if (this.id == null) {
       this.id = UUIDGenerator.generateUUIDv7();
     }
-    this.createdAt = LocalDateTime.now();
-    this.updatedAt = LocalDateTime.now();
-  }
-
-  @PreUpdate
-  protected void onUpdate() {
-    this.updatedAt = LocalDateTime.now();
+    this.createdAt = OffsetDateTime.now();
+    this.updatedAt = OffsetDateTime.now();
   }
 }
