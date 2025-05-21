@@ -13,7 +13,10 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "blog_posts")
+@Table(name = "blog_posts", uniqueConstraints = {
+    @UniqueConstraint(columnNames = { "id" }, name = "uq_blog_posts_id"),
+    @UniqueConstraint(columnNames = { "title", "user_id" }, name = "composite_uq_blog_posts_title_user_id")
+})
 public class PostModel extends BaseModel {
 
   @Column(name = "title", nullable = false, length = 100)
