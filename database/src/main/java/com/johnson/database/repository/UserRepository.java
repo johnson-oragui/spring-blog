@@ -1,6 +1,5 @@
 package com.johnson.database.repository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,13 +19,13 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
   Optional<UserModel> findById(Id id);
 
   @Modifying
-  @Query("UPDATE UserModel SET email = :email WHERE id = :id")
+  @Query("UPDATE UserModel u SET u.email = :email, u.updatedAt = CURRENT_TIMESTAMP WHERE u.id = :id")
   int updateUser(@Param("id") Id id, @Param("email") String email);
 
-  @Query(value = "SELECT COUNT(*) FROM UserModel;", nativeQuery = true)
+  @Query(value = "SELECT COUNT(*) FROM users;", nativeQuery = true)
   long countUsers();
 
-  @Query(value = "SELECT * FROM UserModel LIMIT :limit OFFSET :offset", nativeQuery = true)
+  @Query(value = "SELECT * FROM users LIMIT :limit OFFSET :offset", nativeQuery = true)
   List<UserModel> getUsers(@Param("limit") int limit, @Param("offset") int offset);
 
 }
