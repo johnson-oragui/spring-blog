@@ -1,12 +1,17 @@
 package com.johnson.blog.controllers;
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import com.johnson.database.service.UserService;
 import com.johnson.utilities.dtos.BaseApiResponse;
@@ -19,21 +24,27 @@ import jakarta.validation.Valid;
 
 @RestController
 @Validated
-@RequestMapping("/api/v1/auth")
+@RequestMapping("api/v1/auth")
 public class AuthController {
   @Autowired
   private UserService userService;
 
-  @PostMapping("/register")
+  @PostMapping("register")
   public ResponseEntity<BaseApiResponse<UserDataResponseDto>> createUser(
       @Valid @RequestBody UserRegistrationDto incomingUserData) {
     return userService.createUser(incomingUserData);
   }
 
-  @PostMapping("/login")
+  @PostMapping("login")
   public ResponseEntity<BaseApiResponse<UserLoginResponseDto>> authenticateUser(
-      @Valid @RequestBody UserLoginDto userLoginDto) {
-    return userService.authenticate(userLoginDto);
+      @Valid @RequestBody UserLoginDto userLoginDto, HttpServletResponse response) {
+    return userService.authenticate(userLoginDto, response);
+  }
+
+  @GetMapping("refresh")
+  public ResponseEntity<BaseApiResponse<Map<String, Object>>> refreshToken(HttpServletRequest request,
+      HttpServletResponse response) {
+    return userService.refreshToken(request, response);
   }
 
 }
