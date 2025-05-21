@@ -18,6 +18,9 @@ public class ConfigUtils {
 	public static final String JWT_SECRET = dotenv.get("JWT_SECRET");
 	public static final String JWT_EXPIRATION = dotenv.get("JWT_EXPIRATION");
 
+	public static final String JWT_REFRESH_SECRET = dotenv.get("JWT_REFRESH_SECRET");
+	public static final String JWT_REFRESH_EXPIRATION = dotenv.get("JWT_REFRESH_EXPIRATION");
+
 	public static void load() {
 		System.setProperty("PORT", PORT);
 		System.setProperty("DB_URL", DB_URL);
@@ -25,5 +28,7 @@ public class ConfigUtils {
 		System.setProperty("POSTGRES_PASSWORD", DB_PASSWORD);
 		System.setProperty("JWT_SECRET", JWT_SECRET);
 		System.setProperty("JWT_EXPIRATION", JWT_EXPIRATION);
+		System.setProperty("JWT_REFRESH_SECRET", JWT_REFRESH_SECRET);
+		System.setProperty("JWT_REFRESH_EXPIRATION", JWT_REFRESH_EXPIRATION);
 	}
 }
