@@ -6,6 +6,8 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
+import com.johnson.utilities.config.ConfigUtils;
+
 // @SpringBootApplication(scanBasePackages = { "blog", "database", "utilities" })
 @SpringBootApplication
 @ComponentScan(basePackages = "com.johnson")
@@ -14,6 +16,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 public class BlogApplication {
 
 	public static void main(String[] args) {
+		// Load .env file
+		ConfigUtils.load();
 		SpringApplication.run(BlogApplication.class, args);
 	}
 }
