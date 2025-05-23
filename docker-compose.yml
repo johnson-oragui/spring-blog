@@ -11,13 +11,24 @@ services:
     ports:
       - '5332:5432'
     networks:
-      - db
+      - backend
     volumes:
       - db:/data/postgres
     restart: unless-stopped
+  redis:
+    container_name: my_redis
+    image: redis:alpine
+    ports:
+      - '6379:6379'
+    networks:
+      - backend
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
 networks:
-  db:
+  backend:
     driver: bridge
 
 volumes:
   db:
+  redis_data:
