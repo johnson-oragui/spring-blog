@@ -28,5 +28,9 @@ public interface UserSessionRepository extends JpaRepository<UserSessionModel, S
 
   @Modifying
   @Query("UPDATE UserSessionModel u SET u.isLoggedOut = TRUE, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userId = :userId AND u.deviceId = :deviceId")
-  int updateIsLoggedOut(@Param("userid") String userId, @Param("deviceId") String deviceId);
+  int logoutASession(@Param("userid") String userId, @Param("deviceId") String deviceId);
+
+  @Modifying
+  @Query("UPDATE UserSessionModel u SET u.isLoggedOut = TRUE, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userId = :userId")
+  int logoutAllSessionsByUserId(@Param("userid") String userId);
 }
