@@ -28,6 +28,12 @@ public class UserSessionModel extends BaseModel {
   @Column(name = "jti", nullable = false, length = 60)
   private String jti;
 
+  @Column(name = "ip_address", nullable = false, length = 30)
+  private String ipAddress;
+
+  @Column(name = "location", nullable = true)
+  private String location;
+
   @Column(name = "is_logged_out", nullable = false)
   private boolean isLoggedOut;
 
