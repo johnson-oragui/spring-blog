@@ -9,6 +9,8 @@ import org.springframework.data.repository.query.Param;
 
 import com.johnson.database.model.UserSessionModel;
 
+import jakarta.transaction.Transactional;
+
 public interface UserSessionRepository extends JpaRepository<UserSessionModel, String> {
   @Query(value = "SELECT * FROM blog_user_sessions u WHERE u.jti = :jti AND u.user_id = :userId AND u.device_id = :deviceId", nativeQuery = true)
   Optional<UserSessionModel> findUserSession(@Param("jti") String jti, @Param("userId") String userId,
@@ -18,19 +20,23 @@ public interface UserSessionRepository extends JpaRepository<UserSessionModel, S
   Optional<UserSessionModel> findUserSessionByDeviceId(@Param("deviceId") String deviceId);
 
   @Modifying
-  @Query("UPDATE UserSessionModel u SET u.jti = :jti, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userId = :userId AND u.deviceId = deviceId")
+  @Query("UPDATE UserSessionModel u SET u.jti = :jti, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userId = :userId AND u.deviceId = :deviceId")
+  @Transactional
   int updateJti(@Param("jti") String jti, @Param("userId") String userId, @Param("deviceId") String deviceId);
 
   @Modifying
   @Query("UPDATE UserSessionModel u SET u.jti = :jti, u.isLoggedOut = :isLoggedOut, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userId = :userId AND u.deviceId = deviceId")
+  @Transactional
   int updateJtiAndIsLoggedOut(@Param("jti") String jti, @Param("userId") String userId,
       @Param("deviceId") String deviceId, @Param("isLoggedOut") boolean isLoggedOut);
 
   @Modifying
   @Query("UPDATE UserSessionModel u SET u.isLoggedOut = TRUE, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userId = :userId AND u.deviceId = :deviceId")
-  int logoutASession(@Param("userid") String userId, @Param("deviceId") String deviceId);
+  @Transactional
+  int logoutASession(@Param("userId") String userId, @Param("deviceId") String deviceId);
 
   @Modifying
   @Query("UPDATE UserSessionModel u SET u.isLoggedOut = TRUE, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userId = :userId")
+  @Transactional
   int logoutAllSessionsByUserId(@Param("userid") String userId);
 }
