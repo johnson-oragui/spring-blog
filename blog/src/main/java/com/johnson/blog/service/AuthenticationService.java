@@ -5,13 +5,16 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.johnson.blog.filters.CustomUserDetails;
 import com.johnson.database.model.UserModel;
 import com.johnson.database.model.UserSessionModel;
 import com.johnson.database.repository.UserRepository;
@@ -31,8 +34,10 @@ import com.johnson.utilities.exceptions.ValidationException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
 
 @Service
+@Transactional
 public class AuthenticationService {
 
   private final UserRepository userRepository;
@@ -49,6 +54,8 @@ public class AuthenticationService {
 
   private final RedisSessionService redisSessionService;
 
+  private final CustomUserDetailsService customUserDetailsService;
+
   @Value("${application.security.jwt.expiration}")
   private long JWT_EXPIRATION; // in seconds
 
@@ -59,7 +66,8 @@ public class AuthenticationService {
       AuthenticationManager authenticationManager,
       UserSessionRepository userSessionRepository,
       GeoLocationService geoLocationService,
-      RedisSessionService redisSessionService) {
+      RedisSessionService redisSessionService,
+      CustomUserDetailsService customUserDetailsService) {
     this.authenticationManager = authenticationManager;
     this.jwtService = jwtService;
     this.passwordEncoder = passwordEncoder;
@@ -67,14 +75,21 @@ public class AuthenticationService {
     this.userSessionRepository = userSessionRepository;
     this.geoLocationService = geoLocationService;
     this.redisSessionService = redisSessionService;
+    this.customUserDetailsService = customUserDetailsService;
   }
 
+  @Transactional(rollbackOn = {
+      InternalServerException.class,
+      BadRequestException.class,
+      ValidationException.class,
+      DataIntegrityViolationException.class
+  })
   public ResponseEntity<BaseApiResponse<UserDataResponseDto>> register(UserRegistrationDto userRegistrationDto) {
     if (!userRegistrationDto.getConfirmPassword().equals(userRegistrationDto.getPassword())) {
       throw new ValidationException("password and confirm password must match");
     }
 
-    if (userRepository.existByEmail(userRegistrationDto.getEmail())) {
+    if (userRepository.existsByEmail(userRegistrationDto.getEmail())) {
 
       throw new ConflictException("Email already in use");
     }
@@ -97,23 +112,37 @@ public class AuthenticationService {
     return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 
+  @Transactional(rollbackOn = {
+      InternalServerException.class,
+      BadRequestException.class,
+      ValidationException.class,
+      DataIntegrityViolationException.class
+  })
   public ResponseEntity<BaseApiResponse<UserLoginResponseDto>> authenticate(UserLoginDto userLoginDto,
       HttpServletRequest request,
       HttpServletResponse response) {
 
-    authenticationManager.authenticate(
+    /// authenticationManager deletegates AutheticationProvider.
+    /// Meaning that the default AuthenticationProviderManager now checks in with
+    /// AuthenticationProvider
+    /// and finds the CustomAuthenticationProvider (since it implements the
+    /// supports(UsernamePasswordAuthenticationToken.class)).
+    /// the UsernamePasswordAuthenticationToken is takes email and password cos
+    /// authentication
+    /// is still not cleared.
+    Authentication auth = authenticationManager.authenticate(
         new UsernamePasswordAuthenticationToken(
             userLoginDto.getEmail(),
             userLoginDto.getPassword()));
+    /// gets the customUserDetails (UserDetails with extra UserModel fields)
+    CustomUserDetails customUserDetails = (CustomUserDetails) auth.getPrincipal();
 
-    UserModel userModel = userRepository.findByEmail(userLoginDto.getEmail())
-        .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
     String jti = UUIDGenerator.generateUUIDv7();
     String location = geoLocationService.geoLocationFromIP(request.getRemoteAddr());
 
     Map<String, Object> extraClaims = this._buildClaims(
-        userModel.getId(),
-        userModel.getEmail(),
+        customUserDetails.getUserId(),
+        customUserDetails.getUsername(),
         userLoginDto.getDeviceId(),
         jti,
         "access",
@@ -121,20 +150,21 @@ public class AuthenticationService {
         request.getRemoteAddr(),
         location);
 
-    String jwtToken = jwtService.buildToken(extraClaims, userModel.getEmail(), "access");
+    String jwtToken = jwtService.buildToken(extraClaims, customUserDetails, "access");
     extraClaims.put("tokenType", "refresh");
-    String refreshJwtToken = jwtService.buildToken(extraClaims, userModel.getEmail(), "refresh");
+    String refreshJwtToken = jwtService.buildToken(extraClaims, customUserDetails, "refresh");
 
     Optional<UserSessionModel> deviceIdExists = userSessionRepository
         .findUserSessionByDeviceId(userLoginDto.getDeviceId());
     if (deviceIdExists.isPresent()) {
-      if (!userModel.getId().equals(deviceIdExists.get().getUser().getId())) {
+      if (!customUserDetails.getUserId().equals(deviceIdExists.get().getUser().getId())) {
         throw new BadRequestException("device id must be unique");
       }
 
       // logging in deviceid is same with existing device
       // update the jti with the newly generated jti and update is_logged_out to false
-      int updated = userSessionRepository.updateJtiAndIsLoggedOut(jti, userModel.getId(), userLoginDto.getDeviceId(),
+      int updated = userSessionRepository.updateJtiAndIsLoggedOut(jti, customUserDetails.getUserId(),
+          userLoginDto.getDeviceId(),
           false);
       if (updated < 1) {
         throw new InternalServerException("Something went wrong");
@@ -145,7 +175,9 @@ public class AuthenticationService {
       UserSessionModel userSessionModel = new UserSessionModel();
       userSessionModel.setJti(jti);
       userSessionModel.setDeviceId(userLoginDto.getDeviceId());
-      userSessionModel.setUser(userModel);
+      userSessionModel.setIpAddress(request.getRemoteAddr());
+      userSessionModel.setLocation(location);
+      userSessionModel.setUser(customUserDetails.getUser());
       userSessionRepository.save(userSessionModel);
     }
 
@@ -153,18 +185,19 @@ public class AuthenticationService {
     accessToken.put("token", jwtToken);
     accessToken.put("expireAt", JWT_EXPIRATION * 1000L);
     UserDataResponseDto userDataResponseDto = new UserDataResponseDto(
-        userModel.getId(),
-        userModel.getFirstname(),
-        userModel.getEmail(),
-        userModel.getCreatedAt(),
-        userModel.getUpdatedAt());
+        customUserDetails.getUserId(),
+        customUserDetails.getFirstname(),
+        customUserDetails.getUsername(),
+        customUserDetails.getCreatedAt(),
+        customUserDetails.getUpdatedAt());
     UserLoginResponseDto userLoginResponseDto = new UserLoginResponseDto(
         accessToken,
         userDataResponseDto);
 
     response.setHeader("X-Refresh-Token", refreshJwtToken);
 
-    this.redisSessionService.saveSession(userModel.getId(), userLoginDto.getDeviceId(), request.getRemoteAddr(),
+    this.redisSessionService.saveSession(customUserDetails.getUserId(), userLoginDto.getDeviceId(),
+        request.getRemoteAddr(),
         location, jti);
 
     BaseApiResponse<UserLoginResponseDto> baseApiResponse = BaseApiResponse.success("Login success",
@@ -172,6 +205,12 @@ public class AuthenticationService {
     return new ResponseEntity<>(baseApiResponse, HttpStatus.OK);
   }
 
+  @Transactional(rollbackOn = {
+      InternalServerException.class,
+      BadRequestException.class,
+      ValidationException.class,
+      DataIntegrityViolationException.class
+  })
   public ResponseEntity<BaseApiResponse<Map<String, Object>>> refreshToken(HttpServletRequest request,
       HttpServletResponse response) {
     String headerRefreshToken = request.getHeader("X-Refresh-Token");
@@ -205,6 +244,7 @@ public class AuthenticationService {
       String newJti = UUIDGenerator.generateUUIDv7();
 
       long isUpdated = userSessionRepository.updateJti(newJti, userId, deviceId);
+
       if (isUpdated < 1) {
         throw new InternalServerException("An unexpected error occurred. Could not refresh token.");
       }
@@ -215,15 +255,18 @@ public class AuthenticationService {
           userId,
           email,
           deviceId,
-          jti,
+          newJti,
           "access",
           request.getHeader("User-Agent"),
           request.getRemoteAddr(),
           location);
 
-      String jwtToken = jwtService.buildToken(extraClaims, email, "access");
+      CustomUserDetails customUserDetails = this.customUserDetailsService.loadUserByUsername(email);
+
+      String jwtToken = jwtService.buildToken(extraClaims, customUserDetails, "access");
+
       extraClaims.put("tokenType", "refresh");
-      String refreshJwtToken = jwtService.buildToken(extraClaims, email, "refresh");
+      String refreshJwtToken = jwtService.buildToken(extraClaims, customUserDetails, "refresh");
 
       response.setHeader("X-Refresh-Token", refreshJwtToken);
 
@@ -235,11 +278,34 @@ public class AuthenticationService {
 
       ResponseEntity<BaseApiResponse<Map<String, Object>>> responseEntity = new ResponseEntity<>(baseApiResponse,
           HttpStatus.OK);
+      userSessionRepository.flush();
 
       return responseEntity;
     } catch (JwtException e) {
       throw new UnauthorizedException(e.getMessage());
     }
+  }
+
+  @Transactional(rollbackOn = {
+      InternalServerException.class,
+      BadRequestException.class,
+      ValidationException.class,
+      DataIntegrityViolationException.class
+  })
+  public ResponseEntity<BaseApiResponse<Map<String, Object>>> logoutUser(HttpServletRequest request) {
+    String jwtToken = request.getHeader("Authorization").substring(7);
+    String userId = jwtService.extractClaim(jwtToken, "userId", "access");
+    String deviceId = jwtService.extractClaim(jwtToken, "deviceId", "access");
+    redisSessionService.logoutADevice(userId, deviceId);
+
+    Map<String, Object> data = new HashMap<>();
+    BaseApiResponse<Map<String, Object>> baseApiResponse = BaseApiResponse.success("Logout successfull",
+        data);
+
+    ResponseEntity<BaseApiResponse<Map<String, Object>>> responseEntity = new ResponseEntity<>(baseApiResponse,
+        HttpStatus.OK);
+
+    return responseEntity;
   }
 
   private Map<String, Object> _buildClaims(String userId, String email, String deviceId, String jti, String tokenType,
