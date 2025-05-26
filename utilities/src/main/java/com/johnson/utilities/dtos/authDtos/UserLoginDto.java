@@ -13,7 +13,8 @@ public class UserLoginDto {
   @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,}$", message = "Password must contain at least one digit, one lowercase, one uppercase letter, and be at least 8 characters long")
   private String password;
 
-  @Pattern(regexp = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", message = "deviceId must be a uuid")
+  @NotBlank(message = "deviceId is required")
+  @Pattern(regexp = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", message = "deviceId must be a uuid-string")
   private String deviceId;
 
   public String getEmail() {
