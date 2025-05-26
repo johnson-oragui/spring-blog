@@ -26,7 +26,8 @@ spring:
       connection-init-sql: SELECT 1
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
+    open-in-view: false
     show-sql: true
     properties:
       hibernate:
@@ -38,13 +39,52 @@ spring:
       host: localhost
       port: 6379
 
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000 # 10 minutes
+      cache-null-values: false
+
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    password: ${MAIL_PASSWORD}
+    username: ${MAIL_USERNAME}
+    properties:
+      mail:
+        transport:
+          protocol: smtps
+        smtps:
+          auth: true
+          starttls:
+            enable: false
+          ssl:
+            enable: true
+          socketFactory:
+            class: javax.net.ssl.SSLSocketFactory
+            fallback: false
+          timeoute: 5000
+          connectiontimeout: 5000
+  # email templates
+  thymeleaf:
+    suffix: .html
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET}
+      expiration: ${JWT_EXPIRATION}
+      refresh-token:
+        secret-key: ${JWT_REFRESH_SECRET}
+        expiration: ${JWT_REFRESH_EXPIRATION}
+
 server:
   port: 7005
 logging:
   level:
     root: INFO
-    '[org.springframework]': INFO
+    '[org.springframework.security.web.FilterChainProxy]': DEBUG
     '[com.johnson]': DEBUG
     # '[com.zaxxer.hikari]': DEBUG
