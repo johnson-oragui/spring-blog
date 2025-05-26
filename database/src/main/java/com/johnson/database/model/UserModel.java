@@ -3,6 +3,8 @@ package com.johnson.database.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.annotations.ColumnDefault;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -27,6 +29,14 @@ public class UserModel extends BaseModel {
 
   @Column(name = "email", nullable = false, length = 100, unique = true)
   private String email;
+
+  @Column(name = "is_deleted", nullable = false)
+  @ColumnDefault(value = "false")
+  private boolean isDeleted;
+
+  @Column(name = "is_deactivated", nullable = false)
+  @ColumnDefault(value = "false")
+  private boolean isDeactivated;
 
   @OneToMany(mappedBy = "blogger", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<PostModel> posts = new ArrayList<>();
