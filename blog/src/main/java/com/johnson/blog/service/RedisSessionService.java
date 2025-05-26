@@ -8,10 +8,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.johnson.database.repository.UserSessionRepository;
 
+@Service
 public class RedisSessionService {
   private final RedisTemplate<String, Object> redisTemplate;
   private final ObjectMapper objectMapper;
@@ -48,7 +50,8 @@ public class RedisSessionService {
     Set<String> keys = redisTemplate.keys("session:" + userId + ":*");
     if (keys != null) {
       for (String key : keys) {
-        redisTemplate.opsForHash().delete(key);
+        redisTemplate.delete(key);
+        // redisTemplate.opsForHash().delete(key);
         userSessionRepository.logoutAllSessionsByUserId(userId);
       }
     }
@@ -56,8 +59,10 @@ public class RedisSessionService {
 
   public void logoutADevice(String userId, String deviceId) {
     String key = _getSessionKey(userId, deviceId);
-    redisTemplate.opsForHash().delete(key);
+    // System.out.println(">>>>>>>>>>>>>>>>>>>>>>>> redis session key: " + key);
     userSessionRepository.logoutASession(userId, deviceId);
+    redisTemplate.delete(key);
+    userSessionRepository.flush();
   }
 
   public List<Map<String, Object>> getAllSessions(String userId) {
