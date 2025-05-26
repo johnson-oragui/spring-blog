@@ -3,6 +3,7 @@ package com.johnson.blog;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
@@ -13,6 +14,7 @@ import com.johnson.utilities.config.ConfigUtils;
 @ComponentScan(basePackages = "com.johnson")
 @EnableJpaRepositories(basePackages = "com.johnson.database.repository")
 @EntityScan(basePackages = "com.johnson.database.model")
+@EnableCaching
 public class BlogApplication {
 
 	public static void main(String[] args) {
