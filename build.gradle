@@ -3,6 +3,7 @@ plugins {
     id 'java'
 	id 'io.spring.dependency-management' version '1.1.7'
     id 'org.springframework.boot' version '3.4.5' apply false
+    // id 'org.liquibase.gradle' version '4.25.0'
     
 }
 
@@ -48,14 +49,22 @@ project(':blog') {
     dependencies {
         implementation project(':utilities')
         implementation project(':database')
-        implementation 'com.cloudinary:cloudinary-http44:1.32.0'
+        implementation ('com.cloudinary:cloudinary-http44:1.32.0') {
+            exclude group: 'commons-logging', module: 'commons-logging'
+        }
         implementation 'org.springframework.boot:spring-boot-starter-security'
         implementation 'org.springframework.boot:spring-boot-starter-web'
         developmentOnly 'org.springframework.boot:spring-boot-devtools'
-        testImplementation 'org.springframework.boot:spring-boot-starter-test'
         testImplementation 'org.springframework.security:spring-security-test'
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
         implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+        
+        implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+        runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+        runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+        
+        annotationProcessor 'org.projectlombok:lombok:1.18.30'
+        compileOnly 'org.projectlombok:lombok:1.18.30'
 
             
         runtimeOnly 'org.postgresql:postgresql'
@@ -66,8 +75,21 @@ project(':blog') {
         
         // --- Add Springdoc OpenAPI (Swagger) dependency ---
         implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0' 
-    }
         
+        // ------ Add migration ---------
+        // implementation 'org.liquibase:liquibase-core:4.17.2'
+        // implementation 'org.liquibase.ext:liquibase-hibernate5:4.7.1'
+        
+        // redis
+	    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+        
+        // email
+        implementation 'org.springframework.boot:spring-boot-starter-mail'
+        
+        // html templates
+        implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    }
+
     // Spring Boot specific tasks
     bootJar {
         enabled = true // Builds an executable Spring Boot JAR
@@ -122,10 +144,8 @@ project(':database') {
         
         // test
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
-        testImplementation 'org.springframework.boot:spring-boot-starter-test'
         testImplementation 'org.springframework.security:spring-security-test'
         
         // redis
-	    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     }
 }
