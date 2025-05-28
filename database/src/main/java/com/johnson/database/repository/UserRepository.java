@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.johnson.database.model.UserModel;
 
-import jakarta.persistence.Id;
+import jakarta.transaction.Transactional;
 
 public interface UserRepository extends JpaRepository<UserModel, String> {
 
@@ -19,11 +19,12 @@ public interface UserRepository extends JpaRepository<UserModel, String> {
   // @Query("SELECT COUNT(u) > 0 FROM UserModel u WHERE u.email = :email")
   boolean existsByEmail(@Param("email") String email);
 
-  Optional<UserModel> findById(Id id);
+  Optional<UserModel> findById(String id);
 
+  @Transactional
   @Modifying
-  @Query("UPDATE UserModel u SET u.email = :email, u.updatedAt = CURRENT_TIMESTAMP WHERE u.id = :id")
-  int updateUser(@Param("id") Id id, @Param("email") String email);
+  @Query(value = "UPDATE blog_users u SET u.email = :email, u.updated_at = CURRENT_TIMESTAMP WHERE u.id = :id", nativeQuery = true)
+  int updateUser(@Param("id") String id, @Param("email") String email);
 
   @Query(value = "SELECT COUNT(*) FROM users;", nativeQuery = true)
   long countUsers();
