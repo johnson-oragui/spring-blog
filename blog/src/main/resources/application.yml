@@ -88,3 +88,56 @@ logging:
     '[org.springframework.security.web.FilterChainProxy]': DEBUG
     '[com.johnson]': DEBUG
     # '[com.zaxxer.hikari]': DEBUG
+
+---
+# TEST PROFILE (NEW)
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: ''
+    driver-class-name: org.h2.Driver
+    hikari:
+      maximum-pool-size: 5
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        '[format_sql]': false
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 1 # Use separate DB index for tests
+  cache:
+    type: simple # Use in-memory cache for tests
+  mail:
+    host: localhost
+    port: 1025 # Test mail server port
+    username: ''
+    password: ''
+
+application:
+  security:
+    jwt:
+      secret-key: test-secret-key-1234567890
+      expiration: 300000 # 5 minutes
+      refresh-token:
+        secret-key: test-refresh-secret-123456
+        expiration: 1800000 # 30 minutes
+
+logging:
+  level:
+    root: WARN
+    '[org.springframework]': WARN
+    '[com.johnson]': DEBUG
+    '[org.hibernate.SQL]': DEBUG # Show SQL queries
+    '[org.hibernate.type.descriptor.sql.BasicBinder]': TRACE # Show parameter binding
+
+server:
+  port: 0 # Random port for tests
