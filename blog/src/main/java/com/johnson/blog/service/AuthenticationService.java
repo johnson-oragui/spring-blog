@@ -106,7 +106,9 @@ public class AuthenticationService {
         saved.getCreatedAt(),
         saved.getUpdatedAt());
 
-    BaseApiResponse<UserDataResponseDto> response = BaseApiResponse.success("User registered successfully",
+    BaseApiResponse<UserDataResponseDto> response = BaseApiResponse.success(
+        "User registered successfully",
+        201,
         userDataResponseDto);
 
     return new ResponseEntity<>(response, HttpStatus.CREATED);
@@ -200,7 +202,9 @@ public class AuthenticationService {
         request.getRemoteAddr(),
         location, jti);
 
-    BaseApiResponse<UserLoginResponseDto> baseApiResponse = BaseApiResponse.success("Login success",
+    BaseApiResponse<UserLoginResponseDto> baseApiResponse = BaseApiResponse.success(
+        "Login success",
+        200,
         userLoginResponseDto);
     return new ResponseEntity<>(baseApiResponse, HttpStatus.OK);
   }
@@ -273,7 +277,9 @@ public class AuthenticationService {
       Map<String, Object> newTokenMap = new HashMap<>();
       newTokenMap.put("accessToken", jwtToken);
       newTokenMap.put("expiresAt", JWT_EXPIRATION * 1000L);
-      BaseApiResponse<Map<String, Object>> baseApiResponse = BaseApiResponse.success("Tokens refreshed successfully",
+      BaseApiResponse<Map<String, Object>> baseApiResponse = BaseApiResponse.success(
+          "Tokens refreshed successfully",
+          00,
           newTokenMap);
 
       ResponseEntity<BaseApiResponse<Map<String, Object>>> responseEntity = new ResponseEntity<>(baseApiResponse,
@@ -299,7 +305,9 @@ public class AuthenticationService {
     redisSessionService.logoutADevice(userId, deviceId);
 
     Map<String, Object> data = new HashMap<>();
-    BaseApiResponse<Map<String, Object>> baseApiResponse = BaseApiResponse.success("Logout successfull",
+    BaseApiResponse<Map<String, Object>> baseApiResponse = BaseApiResponse.success(
+        "Logout successfull",
+        200,
         data);
 
     ResponseEntity<BaseApiResponse<Map<String, Object>>> responseEntity = new ResponseEntity<>(baseApiResponse,
