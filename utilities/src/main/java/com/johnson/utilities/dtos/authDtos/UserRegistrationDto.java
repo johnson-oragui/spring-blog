@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size;
 public class UserRegistrationDto {
   @NotBlank(message = "Firstname is required")
   @Size(min = 3, max = 100, message = "firstname must have lenght up to 3 and not more than 100")
-  @Pattern(regexp = "^*[a-zA-Z]*$")
+  @Pattern(regexp = "^*[a-zA-Z]*$", message = "firstname must not include special characters")
   private String firstname;
 
   @Email(message = "Email should be valid")
@@ -21,6 +21,17 @@ public class UserRegistrationDto {
 
   @NotBlank(message = "confirmPassword is required")
   private String confirmPassword;
+
+  public UserRegistrationDto() {
+  }
+
+  public UserRegistrationDto(
+      String firstname, String email, String password, String confirmPassword) {
+    this.firstname = firstname;
+    this.email = email;
+    this.password = password;
+    this.confirmPassword = confirmPassword;
+  }
 
   // Getters and setters
   public String getFirstname() {
