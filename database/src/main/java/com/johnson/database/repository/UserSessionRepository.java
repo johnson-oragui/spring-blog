@@ -20,23 +20,23 @@ public interface UserSessionRepository extends JpaRepository<UserSessionModel, S
   Optional<UserSessionModel> findUserSessionByDeviceId(@Param("deviceId") String deviceId);
 
   @Modifying
-  @Query("UPDATE UserSessionModel u SET u.jti = :jti, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userId = :userId AND u.deviceId = :deviceId")
+  @Query(value = "UPDATE blog_user_sessions u SET u.jti = :jti, u.updated_at = CURRENT_TIMESTAMP WHERE u.user_id = :userId AND u.device_id = :deviceId", nativeQuery = true)
   @Transactional
   int updateJti(@Param("jti") String jti, @Param("userId") String userId, @Param("deviceId") String deviceId);
 
   @Modifying
-  @Query("UPDATE UserSessionModel u SET u.jti = :jti, u.isLoggedOut = :isLoggedOut, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userId = :userId AND u.deviceId = deviceId")
+  @Query(value = "UPDATE blog_user_sessions u SET u.jti = :jti, u.is_logged_out = :isLoggedOut, u.updated_at = CURRENT_TIMESTAMP WHERE u.user_id = :userId AND u.deviceId = deviceId", nativeQuery = true)
   @Transactional
   int updateJtiAndIsLoggedOut(@Param("jti") String jti, @Param("userId") String userId,
       @Param("deviceId") String deviceId, @Param("isLoggedOut") boolean isLoggedOut);
 
   @Modifying
-  @Query("UPDATE UserSessionModel u SET u.isLoggedOut = TRUE, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userId = :userId AND u.deviceId = :deviceId")
+  @Query(value = "UPDATE blog_user_sessions u SET u.is_logged_out = TRUE, u.updated_at = CURRENT_TIMESTAMP WHERE u.user_id = :userId AND u.deviceId = :deviceId", nativeQuery = true)
   @Transactional
   int logoutASession(@Param("userId") String userId, @Param("deviceId") String deviceId);
 
   @Modifying
-  @Query("UPDATE UserSessionModel u SET u.isLoggedOut = TRUE, u.updatedAt = CURRENT_TIMESTAMP WHERE u.userId = :userId")
+  @Query(value = "UPDATE blog_user_sessions u SET u.is_logged_out = TRUE, u.updated_at = CURRENT_TIMESTAMP WHERE u.user_id = :userId", nativeQuery = true)
   @Transactional
   int logoutAllSessionsByUserId(@Param("userid") String userId);
 }
