@@ -15,7 +15,9 @@ public class HomeController {
 
   @GetMapping("")
   public ResponseEntity<BaseApiResponse<Map<String, Object>>> home() {
-    BaseApiResponse<Map<String, Object>> response = BaseApiResponse.success("Welcome to Johnson Blog API",
+    BaseApiResponse<Map<String, Object>> response = BaseApiResponse.success(
+        "Welcome to Johnson Blog API",
+        200,
         new HashMap<>());
     return new ResponseEntity<>(response, HttpStatus.OK);
   }
