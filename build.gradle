@@ -31,6 +31,23 @@ subprojects {
     
     tasks.named('test') {
 	    useJUnitPlatform()
+        systemProperty 'spring.profiles.active', 'test' // Activate test profile
+        testLogging {
+            events "passed", "skipped", "failed", "standardOut", "standardError"
+            showExceptions true
+            showCauses true
+            showStackTraces true
+            showStandardStreams true  // This ensures console output
+            
+            afterSuite { desc, result ->
+            if (!desc.parent) {
+                println "\nTest Results: ${result.resultType}"
+                println "Tests run: ${result.testCount}, " +
+                        "Failures: ${result.failedTestCount}, " +
+                        "Skipped: ${result.skippedTestCount}"
+            }
+        }
+        }
     }
     
     dependencyManagement {
@@ -56,8 +73,13 @@ project(':blog') {
         implementation 'org.springframework.boot:spring-boot-starter-web'
         developmentOnly 'org.springframework.boot:spring-boot-devtools'
         testImplementation 'org.springframework.security:spring-security-test'
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testImplementation 'com.h2database:h2:2.2.224' // H2 for testing
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
         implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+        // test mock
+        testImplementation 'org.mockito:mockito-core:5.10.0'
+        testImplementation 'org.mockito:mockito-junit-jupiter:5.10.0'
         
         implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
         runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
@@ -145,6 +167,7 @@ project(':database') {
         // test
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
         testImplementation 'org.springframework.security:spring-security-test'
+        testImplementation 'com.h2database:h2:2.2.224' // H2 for testing
         
         // redis
     }
